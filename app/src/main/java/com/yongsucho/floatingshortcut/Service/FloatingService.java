@@ -2,7 +2,10 @@ package com.yongsucho.floatingshortcut.Service;
 
 import android.app.Instrumentation;
 import android.app.Service;
+import android.content.ActivityNotFoundException;
 import android.content.Intent;
+import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageManager;
 import android.graphics.PixelFormat;
 import android.graphics.Rect;
 import android.os.IBinder;
@@ -14,15 +17,21 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
+import android.widget.AbsoluteLayout;
 import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.Toast;
 
 import com.yongsucho.floatingshortcut.R;
+
+import java.util.List;
 
 /**
  * Created by yongsucho on 2014. 10. 6..
  */
-public class FloatingService extends Service {
+public class FloatingService extends Service implements View.OnClickListener{
     private final String TAG = "FloatingService";
 
     private WindowManager.LayoutParams layoutParams;
@@ -49,6 +58,87 @@ public class FloatingService extends Service {
     public boolean onUnbind(Intent intent) {
         return super.onUnbind(intent);
     }
+
+    @Override
+    public void onClick(View view) {
+        switch(view.getId()) {
+            case R.id.btnAdd:
+                Log.d(TAG, "onClick : btnAdd");
+                break;
+        }
+
+    }
+    protected void launchApp(String packageName) {
+        Intent mIntent = getPackageManager().getLaunchIntentForPackage(packageName);
+        if (mIntent != null) {
+            try {
+                startActivity(mIntent);
+            } catch (ActivityNotFoundException err) {
+                Toast t = Toast.makeText(getApplicationContext(), R.string.app_not_found, Toast.LENGTH_SHORT);
+                t.show();
+            }
+        }
+    }
+    PackageManager pm;
+    List<ApplicationInfo> packages;
+
+    private void getAppList (View main) {
+        pm = getPackageManager();
+
+        LinearLayout llMain = (LinearLayout)main.findViewById(R.id.llAddButtons);
+
+        ((LinearLayout)main.findViewById(R.id.llAddButtons)).addView(addCategory("com.kakao"));
+        ((LinearLayout)main.findViewById(R.id.llAddButtons)).addView(addCategory("map"));
+        ((LinearLayout)main.findViewById(R.id.llAddButtons)).addView(addCategory("melon"));
+        ((LinearLayout)main.findViewById(R.id.llAddButtons)).addView(addCategory("plex"));
+        ((LinearLayout)main.findViewById(R.id.llAddButtons)).addView(addCategory("mail"));
+
+
+    }
+    private LinearLayout addCategory(String[] packageNames) {
+        LinearLayout llCate  = (LinearLayout)inflater.inflate(R.layout.floating_add , null);
+
+        //get a list of installed apps.
+        List<ApplicationInfo> packages = pm.getInstalledApplications(PackageManager.GET_META_DATA);
+
+        for (ApplicationInfo packageInfo : packages) {
+            for (String packageName : packageNames){
+                if (packageInfo.packageName.contains(packageName)) {
+                    addApps(llCate, packageInfo);
+                }
+            }
+        }
+        return llCate;
+    }
+    private LinearLayout addCategory(String packageName) {
+        LinearLayout llCate  = (LinearLayout)inflater.inflate(R.layout.floating_add , null);
+
+        //get a list of installed apps.
+        List<ApplicationInfo> packages = pm.getInstalledApplications(PackageManager.GET_META_DATA);
+
+        for (ApplicationInfo packageInfo : packages) {
+            if (packageInfo.packageName.contains(packageName)) {
+                addApps(llCate, packageInfo);
+            }
+        }
+        return llCate;
+    }
+
+    private LinearLayout addApps(LinearLayout main , final ApplicationInfo appInfo) {
+        Log.d(TAG, "addApps package :" + appInfo.packageName);
+        ImageButton btn = new ImageButton(this);
+        btn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                launchApp(appInfo.packageName);
+            }
+        });
+        btn.setBackground(appInfo.loadIcon(pm));
+        btn.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
+        main.addView(btn);
+        return main;
+    }
+
     ImageView image;
     WindowManager windowManager;
     int viewFlag = MotionEvent.ACTION_UP;
@@ -64,6 +154,9 @@ public class FloatingService extends Service {
         btnMain = (Button)mainLayout.findViewById(R.id.btnMain);
         windowManager = (WindowManager)getSystemService(WINDOW_SERVICE);
 
+        Button btnAdd = (Button)mainLayout.findViewById(R.id.btnAdd);
+        btnAdd.setOnClickListener(this);
+
         final WindowManager.LayoutParams paramsF = new WindowManager.LayoutParams(
                 WindowManager.LayoutParams.WRAP_CONTENT,
                 WindowManager.LayoutParams.WRAP_CONTENT,
@@ -76,6 +169,7 @@ public class FloatingService extends Service {
         paramsF.y=100;
 
         windowManager.addView(mainLayout, paramsF);
+        getAppList (mainLayout);
 
         try{
 
@@ -98,7 +192,6 @@ public class FloatingService extends Service {
                             initialTouchY = event.getRawY();
                             break;
                         case MotionEvent.ACTION_UP:
-                            Log.d(TAG, "Touch Up! ");
                             if (viewFlag != MotionEvent.ACTION_MOVE) {
                                 if(mainLayout.findViewById(R.id.llExtends).getVisibility() == View.GONE) {
                                     mainLayout.findViewById(R.id.llExtends).setVisibility(View.VISIBLE);
@@ -109,11 +202,19 @@ public class FloatingService extends Service {
                             viewFlag = MotionEvent.ACTION_UP;
                             break;
                         case MotionEvent.ACTION_MOVE:
-                            viewFlag = MotionEvent.ACTION_MOVE;
-
                             paramsF.x = initialX + (int) (event.getRawX() - initialTouchX);
                             paramsF.y = initialY + (int) (event.getRawY() - initialTouchY);
-                            windowManager.updateViewLayout(mainLayout, paramsF);
+                            float diffx = Math.abs(event.getRawX() - initialTouchX);
+                            float diffy = Math.abs(event.getRawY() - initialTouchY);
+
+                            if (diffx > 30 || diffy > 30) {
+                                viewFlag = MotionEvent.ACTION_MOVE;
+
+                                windowManager.updateViewLayout(mainLayout, paramsF);
+                            } else {
+                                windowManager.updateViewLayout(mainLayout, paramsF);
+                            }
+
                             break;
                     }
                     return false;
