@@ -3,9 +3,11 @@ package com.yongsucho.floatingshortcut.Main;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -78,10 +80,13 @@ public class ManageActivity extends Activity implements View.OnClickListener{
             case R.id.btnNew:
                 break;
             case R.id.btnStart:
+                saveAppList(testJSON);
                 ManageActivity.this.startService(iService);
+                saveServiceRestart(true);
                 break;
             case R.id.btnEnd:
                 ManageActivity.this.stopService(iService);
+                saveServiceRestart(false);
                 break;
 
         }
@@ -104,6 +109,29 @@ public class ManageActivity extends Activity implements View.OnClickListener{
             return true;
         }
         return super.onOptionsItemSelected(item);
+    }
+
+    final String testJSON = "{\"CATE\": [ " +
+            "{\"PACK\":[{\"NAME\":\"com.kakao.group\"},{\"NAME\":\"com.kakao.talk\"},{\"NAME\":\"com.kakao.story\"}]}," +
+            "{\"PACK\":[{\"NAME\":\"net.daum.android.map\"},{\"NAME\":\"com.google.android.apps.maps\"},{\"NAME\":\"com.mnsoft.mappyobn\"}]}," +
+            "{\"PACK\":[{\"NAME\":\"com.iloen.melon\"}]}," +
+            "{\"PACK\":[{\"NAME\":\"com.plexapp.android\"}]}"+
+            "]}";
+
+    private void saveAppList(String lists)
+    {
+        SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(this);
+        SharedPreferences.Editor editor = pref.edit();
+        editor.putString("APPLIST", lists);
+        editor.commit();
+
+    }
+    private void saveServiceRestart(boolean isStart)
+    {
+        SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(this);
+        SharedPreferences.Editor editor = pref.edit();
+        editor.putBoolean("ISSTART", isStart);
+        editor.commit();
     }
     HashMap<String, ApplicationInfo> AppInfo;
     PackageManager pm;

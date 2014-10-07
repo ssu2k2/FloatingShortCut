@@ -6,12 +6,14 @@ import android.app.PendingIntent;
 import android.app.Service;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.graphics.PixelFormat;
 import android.graphics.Rect;
 import android.os.IBinder;
 import android.os.SystemClock;
+import android.preference.PreferenceManager;
 import android.text.Layout;
 import android.util.Log;
 import android.view.Gravity;
@@ -27,8 +29,14 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.Toast;
 
+import com.yongsucho.floatingshortcut.Main.ManageActivity;
 import com.yongsucho.floatingshortcut.R;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -44,7 +52,6 @@ public class FloatingService extends Service implements View.OnClickListener{
     private Button btnMain;
 
     private Instrumentation instrumentation;
-    boolean isQuit = false;
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
@@ -59,7 +66,6 @@ public class FloatingService extends Service implements View.OnClickListener{
 
     @Override
     public boolean onUnbind(Intent intent) {
-        isQuit = true;
         return super.onUnbind(intent);
     }
 
@@ -90,11 +96,42 @@ public class FloatingService extends Service implements View.OnClickListener{
         switch(view.getId()) {
             case R.id.btnAdd:
                 Log.d(TAG, "onClick : btnAdd");
+                Intent intent = new Intent();
+                intent.setClass(this, ManageActivity.class);
+                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                startActivity(intent);
                 break;
         }
 
     }
+
+    private void getAppListFromJson(View main, String input) {
+        pm = getPackageManager();
+
+        LinearLayout llMain = (LinearLayout)main.findViewById(R.id.llAddButtons);
+
+        try{
+            JSONObject jsonObject  = new JSONObject(input);
+            JSONArray jCate = jsonObject.getJSONArray("CATE");
+            for (int i = 0; i < jCate.length(); i++) {
+                JSONArray jPack = jCate.getJSONObject(i).getJSONArray("PACK");
+                String[] sPackages = new String[jPack.length()];
+                for (int j = 0; j < jPack.length(); j++) {
+                    JSONObject jObject = jPack.getJSONObject(j);
+                    String name = jObject.getString("NAME");
+                    sPackages[j] = name;
+                }
+                ((LinearLayout)main.findViewById(R.id.llAddButtons)).addView(addCategory(sPackages));
+            }
+        } catch (JSONException e) {
+            Log.d(TAG, "ERROR JSON PARSE");
+        }
+
+    }
     protected void launchApp(String packageName) {
+
+
+
         Intent mIntent = getPackageManager().getLaunchIntentForPackage(packageName);
         if (mIntent != null) {
             try {
@@ -105,20 +142,10 @@ public class FloatingService extends Service implements View.OnClickListener{
             }
         }
     }
+
+
     PackageManager pm;
     List<ApplicationInfo> packages;
-
-    private void getAppList (View main) {
-        pm = getPackageManager();
-
-        LinearLayout llMain = (LinearLayout)main.findViewById(R.id.llAddButtons);
-
-        ((LinearLayout)main.findViewById(R.id.llAddButtons)).addView(addCategory("com.kakao"));
-        ((LinearLayout)main.findViewById(R.id.llAddButtons)).addView(addCategory("map"));
-        ((LinearLayout)main.findViewById(R.id.llAddButtons)).addView(addCategory("melon"));
-        ((LinearLayout)main.findViewById(R.id.llAddButtons)).addView(addCategory("plex"));
-        ((LinearLayout)main.findViewById(R.id.llAddButtons)).addView(addCategory("mail"));
-    }
 
     private LinearLayout addCategory(String[] packageNames) {
         LinearLayout llCate  = (LinearLayout)inflater.inflate(R.layout.floating_add , null);
@@ -163,7 +190,10 @@ public class FloatingService extends Service implements View.OnClickListener{
         main.addView(btn);
         return main;
     }
-
+    private String getPackageList(){
+        SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(this);
+        return pref.getString("APPLIST", "{}");
+    }
     ImageView image;
     WindowManager windowManager;
     int viewFlag = MotionEvent.ACTION_UP;
@@ -196,7 +226,9 @@ public class FloatingService extends Service implements View.OnClickListener{
         paramsF.y=100;
 
         windowManager.addView(mainLayout, paramsF);
-        getAppList (mainLayout);
+
+        String appList = getPackageList();
+        getAppListFromJson(mainLayout, appList);
 
         try{
 
@@ -251,6 +283,11 @@ public class FloatingService extends Service implements View.OnClickListener{
             e.printStackTrace();
         }
     }
+    boolean isStart = false;
+    private boolean isRestart(){
+        SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(this);
+        return pref.getBoolean("ISSTART", false);
+    }
 
     @Override
     public void onDestroy() {
@@ -260,9 +297,9 @@ public class FloatingService extends Service implements View.OnClickListener{
                 windowManager.removeView(mainLayout);
             mainLayout = null;
         }
-//        if (!isQuit){
-//            registerRestartAlarm();
-//        }
+        if (isRestart()){
+            registerRestartAlarm();
+        }
         super.onDestroy();
     }
 }
