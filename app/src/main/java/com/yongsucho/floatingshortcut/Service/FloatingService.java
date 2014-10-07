@@ -1,6 +1,8 @@
 package com.yongsucho.floatingshortcut.Service;
 
+import android.app.AlarmManager;
 import android.app.Instrumentation;
+import android.app.PendingIntent;
 import android.app.Service;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
@@ -9,6 +11,7 @@ import android.content.pm.PackageManager;
 import android.graphics.PixelFormat;
 import android.graphics.Rect;
 import android.os.IBinder;
+import android.os.SystemClock;
 import android.text.Layout;
 import android.util.Log;
 import android.view.Gravity;
@@ -41,12 +44,12 @@ public class FloatingService extends Service implements View.OnClickListener{
     private Button btnMain;
 
     private Instrumentation instrumentation;
-
+    boolean isQuit = false;
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
 
-        return Service.START_NOT_STICKY;
+        return Service.START_STICKY;
     }
 
     @Override
@@ -56,9 +59,32 @@ public class FloatingService extends Service implements View.OnClickListener{
 
     @Override
     public boolean onUnbind(Intent intent) {
+        isQuit = true;
         return super.onUnbind(intent);
     }
 
+    private static final int REBOOT_DELAY_TIMER = 10 * 1000;
+
+    private void registerRestartAlarm() {
+        Log.d(TAG, "registerRestartAlarm");
+        Intent intent = new Intent(FloatingService.this, FloatingReceiver.class);
+        intent.setAction(FloatingReceiver.ACTION_RESTART_MAIN_ACTIVITY);
+        PendingIntent sender = PendingIntent.getBroadcast(FloatingService.this, 0, intent, 0);
+        long firstTime = SystemClock.elapsedRealtime();
+        firstTime += REBOOT_DELAY_TIMER;
+        AlarmManager am = (AlarmManager) getSystemService(ALARM_SERVICE);
+        am.setRepeating(AlarmManager.ELAPSED_REALTIME_WAKEUP, firstTime, REBOOT_DELAY_TIMER, sender);
+    }
+
+    private void unregisterRestartAlarm() {
+
+        Log.d(TAG, "unregisterRestartAlarm");
+        Intent intent = new Intent(FloatingService.this, FloatingReceiver.class);
+        intent.setAction(FloatingReceiver.ACTION_RESTART_MAIN_ACTIVITY);
+        PendingIntent sender = PendingIntent.getBroadcast(FloatingService.this, 0, intent, 0);
+        AlarmManager am = (AlarmManager) getSystemService(ALARM_SERVICE);
+        am.cancel(sender);
+    }
     @Override
     public void onClick(View view) {
         switch(view.getId()) {
@@ -92,9 +118,8 @@ public class FloatingService extends Service implements View.OnClickListener{
         ((LinearLayout)main.findViewById(R.id.llAddButtons)).addView(addCategory("melon"));
         ((LinearLayout)main.findViewById(R.id.llAddButtons)).addView(addCategory("plex"));
         ((LinearLayout)main.findViewById(R.id.llAddButtons)).addView(addCategory("mail"));
-
-
     }
+
     private LinearLayout addCategory(String[] packageNames) {
         LinearLayout llCate  = (LinearLayout)inflater.inflate(R.layout.floating_add , null);
 
@@ -145,8 +170,10 @@ public class FloatingService extends Service implements View.OnClickListener{
     @Override
     public void onCreate() {
         super.onCreate();
-        image = new ImageView(this);
 
+        unregisterRestartAlarm();
+
+        image = new ImageView(this);
         image.setImageResource(R.drawable.ic_launcher);
 
         inflater = (LayoutInflater)getSystemService(LAYOUT_INFLATER_SERVICE);
@@ -227,11 +254,15 @@ public class FloatingService extends Service implements View.OnClickListener{
 
     @Override
     public void onDestroy() {
-        super.onDestroy();
+        Log.d(TAG, "onDestroy");
         if (mainLayout != null) {
             if (windowManager != null )
                 windowManager.removeView(mainLayout);
             mainLayout = null;
         }
+//        if (!isQuit){
+//            registerRestartAlarm();
+//        }
+        super.onDestroy();
     }
 }

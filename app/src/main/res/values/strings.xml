@@ -4,5 +4,6 @@
     <string name="app_name">FloatingShortCut</string>
     <string name="hello_world">Hello world!</string>
     <string name="action_settings">Settings</string>
+    <string name="action_adds">Add</string>
     <string name="app_not_found">Apps not Found!</string>
 </resources>
