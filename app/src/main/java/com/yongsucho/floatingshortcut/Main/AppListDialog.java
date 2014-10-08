@@ -23,6 +23,7 @@ import android.widget.TextView;
 import com.yongsucho.floatingshortcut.R;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 
@@ -121,6 +122,19 @@ public class AppListDialog extends Activity implements View.OnClickListener {
             }
             AppInfo.add(info);
         }
+        Collections.sort(AppInfo, new NameAscCompare());
+    }
+
+    static class NameAscCompare implements java.util.Comparator<AppSelectInfo> {
+        /**
+         * 오름차순(ASC)
+         */
+        @Override
+        public int compare(AppSelectInfo arg0, AppSelectInfo arg1) {
+            // TODO Auto-generated method stub
+            return arg0.name.compareTo(arg1.name);
+        }
+
     }
 
 
