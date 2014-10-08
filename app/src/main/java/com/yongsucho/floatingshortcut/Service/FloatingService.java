@@ -129,10 +129,7 @@ public class FloatingService extends Service implements View.OnClickListener{
 
     }
     protected void launchApp(String packageName) {
-
-
-
-        Intent mIntent = getPackageManager().getLaunchIntentForPackage(packageName);
+       Intent mIntent = getPackageManager().getLaunchIntentForPackage(packageName);
         if (mIntent != null) {
             try {
                 startActivity(mIntent);
@@ -179,6 +176,13 @@ public class FloatingService extends Service implements View.OnClickListener{
     private LinearLayout addApps(LinearLayout main , final ApplicationInfo appInfo) {
         Log.d(TAG, "addApps package :" + appInfo.packageName);
         ImageButton btn = new ImageButton(this);
+
+        float d = getResources().getDisplayMetrics().density;
+        int iconSize = (int)(50 * d);
+
+        ViewGroup.LayoutParams params = new ViewGroup.LayoutParams(
+                iconSize, iconSize
+        );
         btn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -187,7 +191,7 @@ public class FloatingService extends Service implements View.OnClickListener{
         });
         btn.setBackground(appInfo.loadIcon(pm));
         btn.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
-        main.addView(btn);
+        main.addView(btn, params);
         return main;
     }
     private String getPackageList(){

@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="horizontal"
+    android:layout_width="match_parent"
+    android:gravity="center_vertical"
+    android:padding="2dp"
+    android:layout_height="60dp">
+
+    <ImageView
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:paddingRight="5dp"
+        android:layout_marginLeft="60dp"
+        android:id="@+id/ivIcon"
+        android:scaleType="centerInside"
+        />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_weight="1"
+        android:layout_height="wrap_content"
+        android:text="App's Name"
+        android:textSize="25dp"
+        android:id="@+id/tvTitle" />
+
+    <ImageView
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:paddingRight="5dp"
+        android:src="@drawable/ic_menu_delete"
+        android:id="@+id/ivDelete"
+        android:scaleType="centerInside"
+        />
+</LinearLayout>

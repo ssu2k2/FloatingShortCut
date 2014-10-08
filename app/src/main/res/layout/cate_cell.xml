@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="horizontal"
+    android:layout_width="match_parent"
+    android:gravity="center_vertical"
+    android:padding="2dp"
+    android:layout_height="60dp">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_weight="1"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="30dp"
+        android:text="App Group "
+        android:textSize="25dp"
+        android:id="@+id/tvTitle" />
+
+    <ImageView
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:paddingRight="5dp"
+        android:id="@+id/ivChildAdd"
+        android:src="@drawable/ic_menu_add"
+        android:scaleType="centerInside"
+        />
+
+</LinearLayout>
